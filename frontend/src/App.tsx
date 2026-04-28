@@ -53,6 +53,7 @@ import {
 } from './lib/format';
 import { useToast } from './hooks/useToast';
 import type { Booking, BookingStatus, Channel, CreateBookingPayload, CreateCustomerPayload, Customer } from './types/domain';
+import { SettingsPage } from './pages/SettingsPage';
 
 const CHANNELS: Channel[] = ['SMS', 'WHATSAPP', 'TELEGRAM'];
 const BOOKING_STATUSES: BookingStatus[] = ['CONFIRMED', 'CANCELLED', 'COMPLETED'];
@@ -66,27 +67,44 @@ function App() {
   const customersQuery = useQuery({ queryKey: ['customers'], queryFn: api.customers.list });
   const bookingsQuery = useQuery({ queryKey: ['bookings'], queryFn: api.bookings.list });
   const notificationsQuery = useQuery({ queryKey: ['notifications'], queryFn: api.notifications.list, refetchInterval: 12000 });
+  const settingsQuery = useQuery({
+  queryKey: ['settings-status'],
+  queryFn: api.settings.status,
+  refetchInterval: 15000,
+});
 
   const customers = customersQuery.data ?? [];
   const bookings = bookingsQuery.data ?? [];
   const notifications = notificationsQuery.data ?? [];
 
-  const refreshAll = () => {
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-    queryClient.invalidateQueries({ queryKey: ['bookings'] });
-    queryClient.invalidateQueries({ queryKey: ['notifications'] });
-  };
+ const refreshAll = () => {
+  queryClient.invalidateQueries({ queryKey: ['customers'] });
+  queryClient.invalidateQueries({ queryKey: ['bookings'] });
+  queryClient.invalidateQueries({ queryKey: ['notifications'] });
+  queryClient.invalidateQueries({ queryKey: ['settings-status'] });
+};
 
-  const isFetching = customersQuery.isFetching || bookingsQuery.isFetching || notificationsQuery.isFetching;
+ const isFetching =
+  customersQuery.isFetching ||
+  bookingsQuery.isFetching ||
+  notificationsQuery.isFetching ||
+  settingsQuery.isFetching;
 
   return (
     <>
       <Layout page={page} setPage={setPage} isFetching={isFetching} onRefresh={refreshAll}>
-        {page === 'overview' && <Overview customers={customers} bookings={bookings} notifications={notifications} setPage={setPage} />}
-        {page === 'customers' && <CustomersPage customers={customers} showToast={toast.showToast} />}
-        {page === 'bookings' && <BookingsPage customers={customers} bookings={bookings} showToast={toast.showToast} />}
-        {page === 'notifications' && <NotificationsPage notifications={notifications} />}
-      </Layout>
+  {page === 'overview' && <Overview customers={customers} bookings={bookings} notifications={notifications} setPage={setPage} />}
+  {page === 'customers' && <CustomersPage customers={customers} showToast={toast.showToast} />}
+  {page === 'bookings' && <BookingsPage customers={customers} bookings={bookings} showToast={toast.showToast} />}
+  {page === 'notifications' && <NotificationsPage notifications={notifications} />}
+  {page === 'settings' && (
+    <SettingsPage
+      status={settingsQuery.data ?? null}
+      isLoading={settingsQuery.isFetching}
+      showToast={toast.showToast}
+    />
+  )}
+</Layout>
       <Toast message={toast.message} type={toast.type} />
     </>
   );

@@ -12,13 +12,14 @@ import {
 import type { ReactNode } from 'react';
 import { api } from '../api/client';
 
-export type Page = 'overview' | 'customers' | 'bookings' | 'notifications';
+export type Page = 'overview' | 'customers' | 'bookings' | 'notifications' | 'settings';
 
 const nav = [
   { id: 'overview' as const, label: 'Overview', icon: LayoutDashboard },
   { id: 'customers' as const, label: 'Clienti', icon: UsersRound },
   { id: 'bookings' as const, label: 'Prenotazioni', icon: CalendarDays },
   { id: 'notifications' as const, label: 'Notifiche', icon: BellRing },
+  { id: 'settings' as const, label: 'Impostazioni', icon: Settings },
 ];
 
 export function Layout({

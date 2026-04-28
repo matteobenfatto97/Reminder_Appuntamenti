@@ -63,3 +63,34 @@ export interface SendReminderResponse {
   reason?: string;
   jobId?: string;
 }
+
+export interface SettingsStatus {
+  mode: 'DRY_RUN' | 'PRODUCTION';
+  cron: string | null;
+  timezone: string | null;
+  providers: {
+    twilioSms: {
+      configured: boolean;
+      from: string | null;
+    };
+    telegram: {
+      configured: boolean;
+    };
+    whatsapp: {
+      configured: boolean;
+      from: string | null;
+    };
+  };
+}
+
+export interface TestSmsPayload {
+  phoneNumber: string;
+  message: string;
+}
+
+export interface TestSmsResponse {
+  status: 'SENT' | 'FAILED' | 'DRY_RUN';
+  providerMessageId?: string;
+  error?: string;
+  to?: string;
+}

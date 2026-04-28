@@ -6,6 +6,9 @@ import type {
   Customer,
   NotificationLog,
   SendReminderResponse,
+  SettingsStatus,
+  TestSmsPayload,
+  TestSmsResponse,
 } from '../types/domain';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
@@ -28,6 +31,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
         ? data.message.join(', ')
         : data.message
       : `Errore HTTP ${response.status}`;
+
     throw new Error(message);
   }
 
@@ -39,24 +43,57 @@ export const api = {
 
   customers: {
     list: () => request<Customer[]>('/customers'),
+
     create: (payload: CreateCustomerPayload) =>
-      request<Customer>('/customers', { method: 'POST', body: JSON.stringify(payload) }),
+      request<Customer>('/customers', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
     update: (id: string, payload: Partial<CreateCustomerPayload>) =>
-      request<Customer>(`/customers/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
-    remove: (id: string) => request<Customer>(`/customers/${id}`, { method: 'DELETE' }),
+      request<Customer>(`/customers/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      }),
+
+    remove: (id: string) =>
+      request<Customer>(`/customers/${id}`, {
+        method: 'DELETE',
+      }),
   },
 
   bookings: {
     list: () => request<Booking[]>('/bookings'),
+
     create: (payload: CreateBookingPayload) =>
-      request<Booking>('/bookings', { method: 'POST', body: JSON.stringify(payload) }),
+      request<Booking>('/bookings', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
+
     updateStatus: (id: string, status: BookingStatus) =>
-      request<Booking>(`/bookings/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }),
+      request<Booking>(`/bookings/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+      }),
+
     sendReminderNow: (id: string) =>
-      request<SendReminderResponse>(`/bookings/${id}/send-reminder-now`, { method: 'POST' }),
+      request<SendReminderResponse>(`/bookings/${id}/send-reminder-now`, {
+        method: 'POST',
+      }),
   },
 
   notifications: {
     list: () => request<NotificationLog[]>('/notifications'),
+  },
+
+  settings: {
+    status: () => request<SettingsStatus>('/settings/status'),
+
+    testSms: (payload: TestSmsPayload) =>
+      request<TestSmsResponse>('/settings/test-sms', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      }),
   },
 };
