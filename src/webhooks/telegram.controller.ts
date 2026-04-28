@@ -1,69 +1,169 @@
-import { Body, Controller, Headers, Post, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Headers,
+  HttpCode,
+  Logger,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { CustomersService } from '../customers/customers.service';
+import { PrismaService } from '../prisma/prisma.service';
 
-interface TelegramWebhookPayload {
+type TelegramUpdate = {
+  update_id?: number;
   message?: {
+    message_id?: number;
     text?: string;
-    chat?: { id?: number | string };
-    contact?: { phone_number?: string };
+    chat?: {
+      id?: number;
+      type?: string;
+      first_name?: string;
+      last_name?: string;
+      username?: string;
+    };
+    from?: {
+      id?: number;
+      first_name?: string;
+      last_name?: string;
+      username?: string;
+    };
   };
-}
+};
 
 @Controller('webhooks/telegram')
 export class TelegramWebhookController {
+  private readonly logger = new Logger(TelegramWebhookController.name);
+
   constructor(
-    private readonly config: ConfigService,
-    private readonly customersService: CustomersService,
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Post()
+  @HttpCode(200)
   async handleTelegramWebhook(
-    @Body() payload: TelegramWebhookPayload,
+    @Body() update: TelegramUpdate,
     @Headers('x-telegram-bot-api-secret-token') secretToken?: string,
   ) {
-    const expectedSecret = this.config.get<string>('TELEGRAM_WEBHOOK_SECRET');
-    if (expectedSecret && secretToken !== expectedSecret) {
-      throw new UnauthorizedException('Invalid Telegram webhook secret');
+    this.validateSecretToken(secretToken);
+
+    const message = update.message;
+    const chatId = message?.chat?.id;
+    const text = message?.text?.trim();
+
+    if (!chatId || !text) {
+      return { ok: true, ignored: true, reason: 'No chat id or text' };
     }
 
-    const chatId = payload.message?.chat?.id;
-    if (!chatId) return { ok: true, linked: false, reason: 'No chat id in update' };
+    if (!text.startsWith('/start')) {
+      await this.sendTelegramMessage(
+        chatId,
+        'Ciao! Per collegare Telegram ai reminder, usa il comando:\n/start CODICE_CLIENTE',
+      );
 
-    const text = payload.message?.text?.trim();
-    const contactPhone = payload.message?.contact?.phone_number;
-
-    if (contactPhone) {
-      const phoneNumber = contactPhone.startsWith('+') ? contactPhone : `+${contactPhone}`;
-      const linked = await this.customersService.linkTelegramChat({ phoneNumber, telegramChatId: String(chatId) });
-      return { ok: true, linked: Boolean(linked), mode: 'contact_phone' };
+      return { ok: true, ignored: true, reason: 'Unsupported command' };
     }
 
-    if (text?.startsWith('/start')) {
-      const [, rawArgument] = text.split(' ');
-      if (!rawArgument) {
-        return {
-          ok: true,
-          linked: false,
-          reason: 'Use /start <customerId> or share your Telegram contact to link the chat.',
-        };
-      }
+    const customerId = this.extractCustomerIdFromStartCommand(text);
 
-      const customerId = this.looksLikeUuid(rawArgument) ? rawArgument : undefined;
-      const phoneNumber = rawArgument.startsWith('+') ? rawArgument : undefined;
-      const linked = await this.customersService.linkTelegramChat({
-        customerId,
-        phoneNumber,
+    if (!customerId) {
+      await this.sendTelegramMessage(
+        chatId,
+        'Benvenuto! Per collegare il tuo account, usa:\n/start CODICE_CLIENTE',
+      );
+
+      return { ok: true, linked: false, reason: 'Missing customer id' };
+    }
+
+    const customer = await this.prisma.customer.findUnique({
+      where: { id: customerId },
+    });
+
+    if (!customer) {
+      await this.sendTelegramMessage(
+        chatId,
+        'Codice cliente non valido. Controlla il link o richiedi un nuovo collegamento.',
+      );
+
+      return { ok: true, linked: false, reason: 'Customer not found' };
+    }
+
+    const updatedCustomer = await this.prisma.customer.update({
+      where: { id: customerId },
+      data: {
         telegramChatId: String(chatId),
-      });
+        preferredChannel: 'TELEGRAM',
+        reminderOptIn: true,
+      },
+    });
 
-      return { ok: true, linked: Boolean(linked), mode: customerId ? 'customer_id' : 'phone_number' };
-    }
+    this.logger.log(
+      `Linked Telegram chat ${chatId} to customer ${updatedCustomer.id}`,
+    );
 
-    return { ok: true, linked: false };
+    await this.sendTelegramMessage(
+      chatId,
+      `Telegram collegato correttamente ✅\n\nCiao ${updatedCustomer.fullName}, da ora puoi ricevere i reminder delle prenotazioni su Telegram.`,
+    );
+
+    return {
+      ok: true,
+      linked: true,
+      customerId: updatedCustomer.id,
+    };
   }
 
-  private looksLikeUuid(value: string) {
-    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+  private extractCustomerIdFromStartCommand(text: string) {
+    const parts = text.split(/\s+/);
+    const customerId = parts[1];
+
+    if (!customerId) {
+      return null;
+    }
+
+    return customerId.trim();
+  }
+
+  private validateSecretToken(secretToken?: string) {
+    const expectedSecret = this.configService.get<string>(
+      'TELEGRAM_WEBHOOK_SECRET',
+    );
+
+    if (!expectedSecret) {
+      return;
+    }
+
+    if (secretToken !== expectedSecret) {
+      throw new UnauthorizedException('Invalid Telegram webhook secret');
+    }
+  }
+
+  private async sendTelegramMessage(chatId: number, text: string) {
+    const token = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
+
+    if (!token) {
+      this.logger.warn('TELEGRAM_BOT_TOKEN is not configured');
+      return;
+    }
+
+    const response = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+        }),
+      },
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      this.logger.error(`Telegram sendMessage failed: ${errorText}`);
+    }
   }
 }
