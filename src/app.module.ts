@@ -8,6 +8,8 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RemindersModule } from './reminders/reminders.module';
 import { WebhooksModule } from './webhooks/webhooks.module';
+import { SettingsModule } from './settings/settings.module';
+
 
 @Module({
   imports: [
@@ -28,6 +30,7 @@ import { WebhooksModule } from './webhooks/webhooks.module';
     NotificationsModule,
     RemindersModule,
     WebhooksModule,
+    SettingsModule,
   ],
 })
 export class AppModule {}
