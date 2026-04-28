@@ -94,7 +94,13 @@ function App() {
     <>
       <Layout page={page} setPage={setPage} isFetching={isFetching} onRefresh={refreshAll}>
   {page === 'overview' && <Overview customers={customers} bookings={bookings} notifications={notifications} setPage={setPage} />}
-  {page === 'customers' && <CustomersPage customers={customers} showToast={toast.showToast} />}
+  {page === 'customers' && (
+    <CustomersPage
+      customers={customers}
+      showToast={toast.showToast}
+      telegramBotUsername={settingsQuery.data?.providers.telegram.botUsername ?? null}
+    />
+  )}
   {page === 'bookings' && <BookingsPage customers={customers} bookings={bookings} showToast={toast.showToast} />}
   {page === 'notifications' && <NotificationsPage notifications={notifications} />}
   {page === 'settings' && (
@@ -252,7 +258,15 @@ function Overview({
   );
 }
 
-function CustomersPage({ customers, showToast }: { customers: Customer[]; showToast: (message: string, type?: 'success' | 'error') => void }) {
+function CustomersPage({
+  customers,
+  showToast,
+  telegramBotUsername,
+}: {
+  customers: Customer[];
+  showToast: (message: string, type?: 'success' | 'error') => void;
+  telegramBotUsername: string | null;
+}) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState('');
   const queryClient = useQueryClient();
@@ -284,7 +298,18 @@ function CustomersPage({ customers, showToast }: { customers: Customer[]; showTo
       customer.email?.toLowerCase().includes(query)
     );
   });
+const copyTelegramLink = async (customerId: string) => {
+  if (!telegramBotUsername) {
+    showToast('Configura TELEGRAM_BOT_USERNAME nel file .env', 'error');
+    return;
+  }
 
+  const cleanUsername = telegramBotUsername.replace(/^@/, '');
+  const link = `https://t.me/${cleanUsername}?start=${customerId}`;
+
+  await navigator.clipboard.writeText(link);
+  showToast('Link Telegram copiato negli appunti');
+};
   return (
     <div className="space-y-5">
       <SectionHeader
@@ -334,15 +359,33 @@ function CustomersPage({ customers, showToast }: { customers: Customer[]; showTo
                     </button>
                   </td>
                   <td className="text-slate-400">{customer.telegramChatId ? 'Collegato' : 'Non collegato'}</td>
-                  <td className="text-right">
-                    <Select
-                      value={customer.preferredChannel}
-                      onChange={(e) => updateMutation.mutate({ id: customer.id, payload: { preferredChannel: e.target.value as Channel } })}
-                      className="ml-auto max-w-40"
-                    >
-                      {CHANNELS.map((channel) => <option key={channel} value={channel}>{channelLabel(channel)}</option>)}
-                    </Select>
-                  </td>
+                 <td className="text-right">
+  <div className="flex flex-wrap justify-end gap-2">
+    <button
+      onClick={() => copyTelegramLink(customer.id)}
+      className="rounded-2xl border border-sky-400/30 bg-sky-400/10 px-3 py-2 text-xs font-bold text-sky-200 transition hover:bg-sky-400/20"
+    >
+      Copia link Telegram
+    </button>
+
+    <Select
+      value={customer.preferredChannel}
+      onChange={(e) =>
+        updateMutation.mutate({
+          id: customer.id,
+          payload: { preferredChannel: e.target.value as Channel },
+        })
+      }
+      className="max-w-40"
+    >
+      {CHANNELS.map((channel) => (
+        <option key={channel} value={channel}>
+          {channelLabel(channel)}
+        </option>
+      ))}
+    </Select>
+  </div>
+</td>
                 </tr>
               ))}
             </tbody>

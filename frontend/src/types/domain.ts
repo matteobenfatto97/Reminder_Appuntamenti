@@ -75,6 +75,7 @@ export interface SettingsStatus {
     };
     telegram: {
       configured: boolean;
+      botUsername: string | null;
     };
     whatsapp: {
       configured: boolean;

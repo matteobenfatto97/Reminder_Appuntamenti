@@ -29,6 +29,7 @@ export class SettingsController {
         },
         telegram: {
           configured: Boolean(telegramBotToken),
+          botUsername: this.configService.get<string>('TELEGRAM_BOT_USERNAME') || null,
         },
         whatsapp: {
           configured: Boolean(twilioAccountSid && twilioAuthToken && twilioWhatsappFrom),
