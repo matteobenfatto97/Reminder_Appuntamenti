@@ -49,7 +49,10 @@ services:
       APP_TIMEZONE: Europe/Rome
       REMINDER_CRON: "0 8 * * *"
       USE_FALLBACK_CHANNELS: "true"
-      DRY_RUN_NOTIFICATIONS: "true"
+      DRY_RUN_NOTIFICATIONS: ${DRY_RUN_NOTIFICATIONS}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_SMS_FROM: ${TWILIO_SMS_FROM}
       DEFAULT_REMINDER_MESSAGE_TEMPLATE: "Ciao {{nome}}, ti ricordiamo la prenotazione del {{data}} alle {{ora}}. Per modifiche contattaci."
 
   dashboard:
