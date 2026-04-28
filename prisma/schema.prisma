@@ -1,0 +1,81 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum NotificationChannel {
+  WHATSAPP
+  TELEGRAM
+  SMS
+}
+
+enum BookingStatus {
+  CONFIRMED
+  CANCELLED
+  COMPLETED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+model Customer {
+  id              String              @id @default(uuid())
+  fullName        String
+  phoneNumber     String              @unique
+  email           String?
+  telegramChatId  String?             @unique
+  preferredChannel NotificationChannel @default(SMS)
+  reminderOptIn   Boolean             @default(false)
+  bookings        Booking[]
+  notificationLogs NotificationLog[]
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  @@index([preferredChannel])
+  @@index([reminderOptIn])
+}
+
+model Booking {
+  id               String            @id @default(uuid())
+  customerId       String
+  startsAt         DateTime
+  status           BookingStatus     @default(CONFIRMED)
+  notes            String?
+  reminderSentAt   DateTime?
+  customer         Customer          @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  notificationLogs NotificationLog[]
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([customerId])
+  @@index([status, startsAt])
+  @@index([reminderSentAt])
+}
+
+model NotificationLog {
+  id                String              @id @default(uuid())
+  bookingId         String
+  customerId        String
+  channel           NotificationChannel
+  status            NotificationStatus  @default(PENDING)
+  providerMessageId String?
+  errorMessage      String?
+  sentAt            DateTime?
+  booking           Booking             @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customer          Customer            @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([bookingId, channel])
+  @@index([customerId])
+  @@index([status, createdAt])
+  @@index([providerMessageId])
+}

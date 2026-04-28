@@ -1,0 +1,67 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: reminder-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: reminders
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d reminders"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    container_name: reminder-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    container_name: reminder-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/reminders?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      APP_TIMEZONE: Europe/Rome
+      REMINDER_CRON: "0 8 * * *"
+      USE_FALLBACK_CHANNELS: "true"
+      DRY_RUN_NOTIFICATIONS: "true"
+      DEFAULT_REMINDER_MESSAGE_TEMPLATE: "Ciao {{nome}}, ti ricordiamo la prenotazione del {{data}} alle {{ora}}. Per modifiche contattaci."
+
+  dashboard:
+    build: ./frontend
+    container_name: reminder-dashboard
+    restart: unless-stopped
+    depends_on:
+      - app
+    ports:
+      - "5173:5173"
+    environment:
+      VITE_API_BASE_URL: http://localhost:3000
+
+volumes:
+  postgres_data:
