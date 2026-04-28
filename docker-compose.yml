@@ -56,6 +56,7 @@ services:
       DEFAULT_REMINDER_MESSAGE_TEMPLATE: "Ciao {{nome}}, ti ricordiamo la prenotazione del {{data}} alle {{ora}}. Per modifiche contattaci."
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET}
   dashboard:
     build: ./frontend
     container_name: reminder-dashboard
