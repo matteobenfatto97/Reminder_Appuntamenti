@@ -1,7 +1,14 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import { BadRequestException, 
+  Body, 
+  Controller, 
+  Get, 
+  Post } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import twilio from 'twilio';
 import { TestSmsDto } from './dto/test-sms.dto';
+import { TestTelegramDto } from './dto/test-telegram.dto';
+  
+  
 
 @Controller('settings')
 export class SettingsController {
@@ -42,7 +49,6 @@ export class SettingsController {
   @Post('test-sms')
   async sendTestSms(@Body() dto: TestSmsDto) {
     const dryRun = this.configService.get<string>('DRY_RUN_NOTIFICATIONS') === 'true';
-
     if (dryRun) {
       return {
         status: 'DRY_RUN',
@@ -76,6 +82,43 @@ export class SettingsController {
       to: this.maskPhoneNumber(dto.phoneNumber),
     };
   }
+  @Post('test-telegram')
+async testTelegram(@Body() dto: TestTelegramDto) {
+  const telegramBotToken = this.configService.get<string>('TELEGRAM_BOT_TOKEN');
+
+  if (!telegramBotToken) {
+    throw new BadRequestException('Telegram bot token is not configured');
+  }
+
+  const response = await fetch(
+    `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: dto.telegramChatId,
+        text: dto.message,
+      }),
+    },
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new BadRequestException(
+      data?.description ?? 'Telegram test message failed',
+    );
+  }
+
+  return {
+    status: 'SENT',
+    providerMessageId: String(data.result?.message_id ?? ''),
+    to: dto.telegramChatId,
+  };
+}
+  
 
   private maskPhoneNumber(phoneNumber: string) {
     if (phoneNumber.length <= 5) return '***';
