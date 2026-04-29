@@ -49,3 +49,76 @@ option {
   background: #020617;
   color: #e2e8f0;
 }
+/**/
+/*** CALENDARIO ***/
+/**/
+.calendar-shell .fc {
+  color: rgb(226 232 240);
+}
+
+.calendar-shell .fc-toolbar {
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.calendar-shell .fc-toolbar-title {
+  color: white;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+.calendar-shell .fc-button {
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: white !important;
+  border-radius: 0.9rem !important;
+  font-weight: 800 !important;
+  box-shadow: none !important;
+}
+
+.calendar-shell .fc-button:hover {
+  background: rgba(129, 140, 248, 0.22) !important;
+}
+
+.calendar-shell .fc-button-active {
+  background: rgba(129, 140, 248, 0.35) !important;
+}
+
+.calendar-shell .fc-theme-standard td,
+.calendar-shell .fc-theme-standard th,
+.calendar-shell .fc-scrollgrid {
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+.calendar-shell .fc-daygrid-day-number,
+.calendar-shell .fc-col-header-cell-cushion {
+  color: rgb(203 213 225);
+  text-decoration: none;
+}
+
+.calendar-shell .fc-day-today {
+  background: rgba(129, 140, 248, 0.12) !important;
+}
+
+.calendar-shell .fc-event {
+  border: 0 !important;
+  border-radius: 0.75rem !important;
+  padding: 0.15rem 0.35rem !important;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.calendar-event-confirmed {
+  background: rgba(34, 197, 94, 0.22) !important;
+  color: rgb(187 247 208) !important;
+}
+
+.calendar-event-completed {
+  background: rgba(56, 189, 248, 0.2) !important;
+  color: rgb(186 230 253) !important;
+}
+
+.calendar-event-cancelled {
+  background: rgba(244, 63, 94, 0.2) !important;
+  color: rgb(254 205 211) !important;
+}

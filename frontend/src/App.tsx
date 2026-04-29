@@ -54,6 +54,9 @@ import {
 import { useToast } from './hooks/useToast';
 import type { Booking, BookingStatus, Channel, CreateBookingPayload, CreateCustomerPayload, Customer } from './types/domain';
 import { SettingsPage } from './pages/SettingsPage';
+import { CalendarPage } from './pages/CalendarPage';
+
+/***  FINE IMPORT ***/
 
 const CHANNELS: Channel[] = ['SMS', 'WHATSAPP', 'TELEGRAM'];
 const BOOKING_STATUSES: BookingStatus[] = ['CONFIRMED', 'CANCELLED', 'COMPLETED'];
@@ -93,6 +96,12 @@ function App() {
   return (
     <>
       <Layout page={page} setPage={setPage} isFetching={isFetching} onRefresh={refreshAll}>
+  {page === 'calendar' && (
+  <CalendarPage
+    bookings={bookings}
+    onOpenBookings={() => setPage('bookings')}
+  />
+)}
   {page === 'overview' && <Overview customers={customers} bookings={bookings} notifications={notifications} setPage={setPage} />}
   {page === 'customers' && (
     <CustomersPage

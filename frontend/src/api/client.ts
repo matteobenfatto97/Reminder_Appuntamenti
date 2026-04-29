@@ -102,8 +102,9 @@ export const api = {
       request<TestTelegramResponse>('/settings/test-telegram', {
     method: 'POST',
     body: JSON.stringify(payload),
-  }),
-  telegramWebhookStatus: () =>
-  request<TelegramWebhookStatus>('/settings/telegram-webhook-status'),
+    }),
+
+    telegramWebhookStatus: () =>
+    request<TelegramWebhookStatus>('/settings/telegram-webhook-status'),
   },
 };

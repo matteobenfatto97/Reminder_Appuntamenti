@@ -12,10 +12,11 @@ import {
 import type { ReactNode } from 'react';
 import { api } from '../api/client';
 
-export type Page = 'overview' | 'customers' | 'bookings' | 'notifications' | 'settings';
+export type Page = 'overview' | 'customers' | 'bookings' | 'notifications' | 'settings' | 'calendar';
 
 const nav = [
   { id: 'overview' as const, label: 'Overview', icon: LayoutDashboard },
+  { id: 'calendar' as const, label: 'Calendario', icon: CalendarDays },
   { id: 'customers' as const, label: 'Clienti', icon: UsersRound },
   { id: 'bookings' as const, label: 'Prenotazioni', icon: CalendarDays },
   { id: 'notifications' as const, label: 'Notifiche', icon: BellRing },
