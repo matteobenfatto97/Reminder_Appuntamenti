@@ -17,4 +17,5 @@ export const ReminderQueueRegistration = BullModule.registerQueue({
 export interface ReminderJobPayload {
   bookingId: string;
   force?: boolean;
+  scheduledFor?: string;
 }

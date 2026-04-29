@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { RemindersService } from '../reminders/reminders.service';
 import { BookingsService } from './bookings.service';
 import { CreateBookingDto } from './dto/create-booking.dto';
@@ -21,6 +29,11 @@ export class BookingsController {
     return this.bookingsService.findAll();
   }
 
+  @Post('schedule-smart-reminders')
+  scheduleSmartReminders() {
+    return this.remindersService.scheduleSmartReminders();
+  }
+
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.bookingsService.findOne(id);
@@ -34,6 +47,11 @@ export class BookingsController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.bookingsService.remove(id);
+  }
+
+  @Post(':id/schedule-smart-reminder')
+  scheduleSmartReminder(@Param('id') id: string) {
+    return this.remindersService.scheduleSmartReminderForBooking(id);
   }
 
   @Post(':id/send-reminder-now')
