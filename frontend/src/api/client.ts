@@ -9,6 +9,8 @@ import type {
   SettingsStatus,
   TestSmsPayload,
   TestSmsResponse,
+  TestTelegramPayload,
+  TestTelegramResponse,
 } from '../types/domain';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000';
@@ -95,5 +97,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(payload),
       }),
+    testTelegram: (payload: TestTelegramPayload) =>
+      request<TestTelegramResponse>('/settings/test-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  }),
   },
 };

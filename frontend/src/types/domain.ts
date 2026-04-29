@@ -2,6 +2,17 @@ export type Channel = 'SMS' | 'WHATSAPP' | 'TELEGRAM';
 export type BookingStatus = 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
 export type NotificationStatus = 'PENDING' | 'SENT' | 'FAILED' | 'SKIPPED';
 
+export type TestTelegramPayload = {
+  telegramChatId: string;
+  message: string;
+};
+
+export type TestTelegramResponse = {
+  status: 'SENT' | 'FAILED';
+  providerMessageId?: string;
+  to: string;
+};
+
 export interface Customer {
   id: string;
   fullName: string;
