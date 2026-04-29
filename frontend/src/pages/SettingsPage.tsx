@@ -63,6 +63,16 @@ export function SettingsPage({
     onError: (error: Error) => showToast(error.message, 'error'),
   });
 
+  const telegramWebhookMutation = useMutation({
+    mutationFn: api.settings.telegramWebhookStatus,
+    onSuccess: () => {
+      showToast('Stato webhook Telegram aggiornato');
+    },
+    onError: (error: Error) => showToast(error.message, 'error'),
+  });
+
+  const telegramWebhookStatus = telegramWebhookMutation.data;
+
   const mode = status?.mode ?? 'DRY_RUN';
   const isProduction = mode === 'PRODUCTION';
   const telegramConfigured = Boolean(status?.providers.telegram.configured);
@@ -162,6 +172,119 @@ export function SettingsPage({
           icon={Radio}
         />
       </div>
+
+      <Card>
+        <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <h3 className="text-xl font-black text-white">Webhook Telegram</h3>
+            <p className="mt-1 text-sm text-slate-400">
+              Controlla lo stato del webhook registrato su Telegram senza usare il terminale.
+            </p>
+          </div>
+
+          <Button
+            variant="secondary"
+            onClick={() => telegramWebhookMutation.mutate()}
+            disabled={telegramWebhookMutation.isPending || !telegramConfigured}
+          >
+            <ServerCog className="h-4 w-4" />
+            {telegramWebhookMutation.isPending ? 'Verifica...' : 'Verifica webhook'}
+          </Button>
+        </div>
+
+        <div className="grid gap-3 xl:grid-cols-4">
+          <InfoRow
+            icon={ShieldCheck}
+            label="Stato webhook"
+            value={
+              telegramWebhookStatus
+                ? telegramWebhookStatus.configured
+                  ? 'Configurato'
+                  : 'Non configurato'
+                : 'Non verificato'
+            }
+          />
+
+          <InfoRow
+            icon={TimerReset}
+            label="Pending updates"
+            value={
+              telegramWebhookStatus
+                ? String(telegramWebhookStatus.pendingUpdateCount)
+                : '—'
+            }
+          />
+
+          <InfoRow
+            icon={ServerCog}
+            label="Max connections"
+            value={
+              telegramWebhookStatus?.maxConnections
+                ? String(telegramWebhookStatus.maxConnections)
+                : '—'
+            }
+          />
+
+          <InfoRow
+            icon={Clock3}
+            label="Ultimo controllo"
+            value={
+              telegramWebhookStatus?.checkedAt
+                ? formatWebhookDate(telegramWebhookStatus.checkedAt)
+                : '—'
+            }
+          />
+        </div>
+
+        <div className="mt-4 grid gap-3">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/45 p-4">
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+              Webhook URL
+            </p>
+            <p className="mt-2 break-all text-sm font-semibold text-slate-200">
+              {telegramWebhookStatus?.url ?? 'Non verificato'}
+            </p>
+          </div>
+
+          <div
+            className={
+              telegramWebhookStatus?.lastErrorMessage
+                ? 'rounded-3xl border border-rose-400/20 bg-rose-400/10 p-4'
+                : 'rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-4'
+            }
+          >
+            <p className="text-xs font-black uppercase tracking-[0.18em] text-slate-500">
+              Ultimo errore Telegram
+            </p>
+
+            <p
+              className={
+                telegramWebhookStatus?.lastErrorMessage
+                  ? 'mt-2 text-sm font-semibold text-rose-100'
+                  : 'mt-2 text-sm font-semibold text-emerald-100'
+              }
+            >
+              {telegramWebhookStatus?.lastErrorMessage ?? 'Nessun errore rilevato'}
+            </p>
+
+            <p className="mt-2 text-xs text-slate-400">
+              Data errore:{' '}
+              {telegramWebhookStatus?.lastErrorDate
+                ? formatWebhookDate(telegramWebhookStatus.lastErrorDate)
+                : '—'}
+            </p>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-slate-950/45 p-4 text-xs leading-5 text-slate-400">
+            Allowed updates:{' '}
+            <span className="font-bold text-slate-200">
+              {telegramWebhookStatus?.allowedUpdates?.length
+                ? telegramWebhookStatus.allowedUpdates.join(', ')
+                : '—'}
+            </span>
+          </div>
+        </div>
+      </Card>
 
       <div className="grid gap-5 xl:grid-cols-3">
         <Card>
@@ -403,4 +526,11 @@ function InfoRow({
       </div>
     </div>
   );
+}
+
+function formatWebhookDate(value: string) {
+  return new Date(value).toLocaleString('it-IT', {
+    dateStyle: 'short',
+    timeStyle: 'medium',
+  });
 }

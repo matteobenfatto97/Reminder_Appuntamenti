@@ -106,3 +106,14 @@ export interface TestSmsResponse {
   error?: string;
   to?: string;
 }
+
+export type TelegramWebhookStatus = {
+  configured: boolean;
+  url: string | null;
+  pendingUpdateCount: number;
+  lastErrorMessage: string | null;
+  lastErrorDate: string | null;
+  maxConnections: number | null;
+  allowedUpdates: string[];
+  checkedAt: string;
+};
